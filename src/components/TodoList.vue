@@ -91,7 +91,7 @@
 						v-if="item.id == editTodo.id"
 						@keyup.esc="cancelEdit()"
 						@keyup.enter="doneEdit(item)"
-						v-model="editTodo.title"
+						v-model="editTodo.task"
 					/>
 				</li>
 				<!-- <li class="list-group-item">
@@ -119,6 +119,26 @@
 			}
 		}
 	`;
+	const ADD_TODO = gql`
+		mutation ($todo: String!) {
+			insert_todo_list(objects: { task: $todo }) {
+				affected_rows
+				returning {
+					id
+					task
+					created_at
+				}
+			}
+		}
+	`;
+
+	// const REMOVE_TODO = gql`
+	// 	mutation removeTodo($id: Int!) {
+	// 		delete_todo_list(where: { id: { _eq: $id } }) {
+	// 			affected_rows
+	// 		}
+	// 	}
+	// `;
 	export default {
 		name: "TodoList",
 		// props: {
@@ -129,7 +149,7 @@
 				newTodo: "",
 				todos: [],
 				editTodo: {},
-				editTitle: "",
+				editTask: "",
 				visibility: "all",
 			};
 		},
@@ -144,12 +164,23 @@
 				if (!value) {
 					return;
 				}
-				console.log(value, timesTamp);
-				//新增物件進todos
+				//console.log(value, timesTamp);
+				// 新增物件進todos
 				this.todos.push({
 					id: timesTamp,
 					task: value,
 					completed: false,
+				});
+				this.$apollo.mutate({
+					mutation: ADD_TODO,
+					variables: {
+						todo: value,
+					},
+					update: (cache, { data: { insert_todo_list } }) => {
+						// Read the data from our cache for this query.
+						// eslint-disable-next-line
+						console.log(insert_todo_list);
+					},
 				});
 				//輸入後清除
 				this.newTodo = "";
@@ -166,7 +197,7 @@
 			edit(item) {
 				console.log(item);
 				this.editTodo = item;
-				this.editTitle = item.task;
+				this.editTask = item.task;
 			},
 
 			cancelEdit() {
@@ -175,7 +206,7 @@
 
 			doneEdit(item) {
 				item.task = this.editTodo.task;
-				this.editTitle = ""; //輸入完清空
+				this.editTask = ""; //輸入完清空
 				this.editTodo = {};
 				//沒有雙擊任何一個todo的狀況下，editTodo本來就是空的，雙擊後才會出現input，所以在input編輯完後，要跳回原本checkbox的樣子，要回到editTodo是空的狀態。
 			},
@@ -208,7 +239,7 @@
 					query: GET_TODOS,
 				})
 				.then((data) => {
-					//console.log(data.data.todo_list);
+					// console.log(data.data.todo_list);
 					let todoList = data.data.todo_list;
 					todoList.forEach((todo) => {
 						//console.log(todo.created_at);
