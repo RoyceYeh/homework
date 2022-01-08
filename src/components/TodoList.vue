@@ -132,13 +132,20 @@
 		}
 	`;
 
-	// const REMOVE_TODO = gql`
-	// 	mutation removeTodo($id: Int!) {
-	// 		delete_todo_list(where: { id: { _eq: $id } }) {
-	// 			affected_rows
-	// 		}
-	// 	}
-	// `;
+	const REMOVE_TODO = gql`
+		mutation removeTodo($id: Int!) {
+			delete_todo_list(where: { id: { _eq: $id } }) {
+				affected_rows
+			}
+		}
+	`;
+	const UPDATE_TODO = gql`
+		mutation updateTodo($id: Int!, $task: String) {
+			update_todo_list(where: { id: { _eq: $id } }, _set: { task: $task }) {
+				affected_rows
+			}
+		}
+	`;
 	export default {
 		name: "TodoList",
 		// props: {
@@ -192,10 +199,33 @@
 				});
 
 				this.todos.splice(newIndex, 1);
+
+				this.$apollo.mutate({
+					mutation: REMOVE_TODO,
+					variables: {
+						id: item.id,
+					},
+					update: (store, { data: { delete_todo_list } }) => {
+						if (delete_todo_list.affected_rows) {
+							if (this.type === "private") {
+								const data = store.readQuery({
+									query: GET_TODOS,
+								});
+								data.todos = data.todos.filter((t) => {
+									return t.id !== item.id;
+								});
+								store.writeQuery({
+									query: GET_TODOS,
+									data,
+								});
+							}
+						}
+					},
+				});
 			},
 
 			edit(item) {
-				console.log(item);
+				//console.log(item);
 				this.editTodo = item;
 				this.editTask = item.task;
 			},
@@ -206,6 +236,20 @@
 
 			doneEdit(item) {
 				item.task = this.editTodo.task;
+				this.$apollo.mutate({
+					mutation: UPDATE_TODO,
+					variables: {
+						id: item.id,
+						task: item.task,
+					},
+					update: (store, { data: { update_todo_list } }) => {
+						if (update_todo_list.affected_rows) {
+							// eslint-disable-next-line
+							//console.log(item.id);
+							//console.log(update_todo_list);
+						}
+					},
+				});
 				this.editTask = ""; //輸入完清空
 				this.editTodo = {};
 				//沒有雙擊任何一個todo的狀況下，editTodo本來就是空的，雙擊後才會出現input，所以在input編輯完後，要跳回原本checkbox的樣子，要回到editTodo是空的狀態。
@@ -215,15 +259,15 @@
 			//過濾後的todos
 			filterTodos() {
 				let activeTodos = [];
-				if (this.visibility == "all") {
+				if (this.visibility === "all") {
 					activeTodos = this.todos;
-				} else if (this.visibility == "active") {
+				} else if (this.visibility === "active") {
 					this.todos.forEach(function (item) {
 						if (item.completed == false) {
 							activeTodos.push(item);
 						}
 					});
-				} else if (this.visibility == "completed") {
+				} else if (this.visibility === "completed") {
 					this.todos.forEach(function (item) {
 						if (item.completed == true) {
 							activeTodos.push(item);
