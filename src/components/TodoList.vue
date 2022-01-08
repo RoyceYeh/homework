@@ -57,11 +57,8 @@
 					@dblclick="edit(item)"
 				>
 					<!-- 正常狀況都沒點擊的話，editTodo為空的物件，item.id !== editTodo.id 自然為True -->
-					<div
-						class="d-flex justify-content-between"
-						v-if="item.id !== editTodo.id"
-					>
-						<div class="form-check">
+					<div class="d-flex" v-if="item.id !== editTodo.id">
+						<div class="form-check flex-grow-1 d-flex align-items-center">
 							<input
 								type="checkbox"
 								class="form-check-input"
@@ -69,28 +66,24 @@
 								v-model="item.completed"
 							/>
 							<label
-								class="form-check-label"
+								class="form-check-label ms-3"
 								:class="{ completed: item.completed }"
 								:for="item.id"
 							>
 								{{ item.task }}
 							</label>
-							<label
-								class="form-check-label"
-								:class="{ completed: item.completed }"
-								:for="item.id"
-							>
-								{{ item.created_at }}
-							</label>
 						</div>
-						<button
-							type="button"
-							class="btn-close"
-							aria-label="Close"
-							@click="removeTodo(item)"
-						>
-							<!-- <span aria-hidden="true">&times;</span> -->
-						</button>
+						<div class="d-flex align-items-center">
+							<p class="mb-0 me-1">{{ item.created_at }}</p>
+							<button
+								type="button"
+								class="btn-close"
+								aria-label="Close"
+								@click="removeTodo(item)"
+							>
+								<!-- <span aria-hidden="true">&times;</span> -->
+							</button>
+						</div>
 					</div>
 					<input
 						type="text"
@@ -105,20 +98,21 @@
                   <input type="text" class="form-control" />
                 </li> -->
 			</ul>
-			<div class="card-footer d-flex justify-content-between">
+			<!-- <div class="card-footer d-flex justify-content-between">
 				<span>還有 3 筆任務未完成</span>
 				<a href="#">清除所有任務</a>
-			</div>
+			</div> -->
 		</div>
 	</section>
 </template>
 
 <script>
 	import gql from "graphql-tag";
+	import moment from "moment";
 
 	const GET_TODOS = gql`
 		query getMyTodos {
-			todo_list(order_by: { id: asc }, limit: 5) {
+			todo_list(order_by: { created_at: desc }, limit: 10) {
 				id
 				created_at
 				task
@@ -214,7 +208,14 @@
 					query: GET_TODOS,
 				})
 				.then((data) => {
-					console.log(data.data.todo_list);
+					//console.log(data.data.todo_list);
+					let todoList = data.data.todo_list;
+					todoList.forEach((todo) => {
+						//console.log(todo.created_at);
+						todo.completed = false;
+						todo.created_at = moment(todo.created_at).format("Y-M-D");
+					});
+
 					this.todos = data.data.todo_list;
 				});
 		},
