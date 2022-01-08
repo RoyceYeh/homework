@@ -16,20 +16,22 @@ import "bootstrap-vue/dist/bootstrap-vue.css";
 // Vue.use(AuthPlugin);
 Vue.use(VueApollo);
 Vue.config.productionTip = false;
-const getHeaders = () => {
-	const headers = {};
-	const token = window.localStorage.getItem("apollo-token");
-	if (token) {
-		headers.authorization = `Bearer ${token}`;
-	}
-	return headers;
-};
+// const getHeaders = () => {
+// 	const headers = {};
+// 	const token = "myadminsecretkey";
+// 	headers.authorization = `Bearer ${token}`;
+
+// 	return headers;
+// };
 
 // Create an http link:
 const link = new HttpLink({
-	uri: "https://hasura.io/learn/graphql",
+	uri: "http://35.189.161.175:8080/v1/graphql",
 	fetch,
-	headers: getHeaders(),
+	headers: {
+		// add API key here
+		"x-hasura-admin-secret": "myadminsecretkey",
+	},
 });
 
 const client = new ApolloClient({

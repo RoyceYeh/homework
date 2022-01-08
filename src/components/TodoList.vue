@@ -57,7 +57,10 @@
 					@dblclick="edit(item)"
 				>
 					<!-- 正常狀況都沒點擊的話，editTodo為空的物件，item.id !== editTodo.id 自然為True -->
-					<div class="d-flex" v-if="item.id !== editTodo.id">
+					<div
+						class="d-flex justify-content-between"
+						v-if="item.id !== editTodo.id"
+					>
 						<div class="form-check">
 							<input
 								type="checkbox"
@@ -70,16 +73,23 @@
 								:class="{ completed: item.completed }"
 								:for="item.id"
 							>
-								{{ item.title }}
+								{{ item.task }}
+							</label>
+							<label
+								class="form-check-label"
+								:class="{ completed: item.completed }"
+								:for="item.id"
+							>
+								{{ item.created_at }}
 							</label>
 						</div>
 						<button
 							type="button"
-							class="close ml-auto"
+							class="btn-close"
 							aria-label="Close"
 							@click="removeTodo(item)"
 						>
-							<span aria-hidden="true">&times;</span>
+							<!-- <span aria-hidden="true">&times;</span> -->
 						</button>
 					</div>
 					<input
@@ -104,8 +114,19 @@
 </template>
 
 <script>
+	import gql from "graphql-tag";
+
+	const GET_TODOS = gql`
+		query getMyTodos {
+			todo_list(order_by: { id: asc }, limit: 5) {
+				id
+				created_at
+				task
+			}
+		}
+	`;
 	export default {
-		name: "HelloWorld",
+		name: "TodoList",
 		// props: {
 		// 	msg: String,
 		// },
@@ -133,7 +154,7 @@
 				//新增物件進todos
 				this.todos.push({
 					id: timesTamp,
-					title: value,
+					task: value,
 					completed: false,
 				});
 				//輸入後清除
@@ -151,7 +172,7 @@
 			edit(item) {
 				console.log(item);
 				this.editTodo = item;
-				this.editTitle = item.title;
+				this.editTitle = item.task;
 			},
 
 			cancelEdit() {
@@ -159,7 +180,7 @@
 			},
 
 			doneEdit(item) {
-				item.title = this.editTodo.title;
+				item.task = this.editTodo.task;
 				this.editTitle = ""; //輸入完清空
 				this.editTodo = {};
 				//沒有雙擊任何一個todo的狀況下，editTodo本來就是空的，雙擊後才會出現input，所以在input編輯完後，要跳回原本checkbox的樣子，要回到editTodo是空的狀態。
@@ -172,14 +193,12 @@
 				if (this.visibility == "all") {
 					activeTodos = this.todos;
 				} else if (this.visibility == "active") {
-					//接收未完成的內容
 					this.todos.forEach(function (item) {
 						if (item.completed == false) {
 							activeTodos.push(item);
 						}
 					});
 				} else if (this.visibility == "completed") {
-					//接收未完成的內容
 					this.todos.forEach(function (item) {
 						if (item.completed == true) {
 							activeTodos.push(item);
@@ -188,6 +207,16 @@
 				}
 				return activeTodos;
 			},
+		},
+		mounted() {
+			this.$apollo
+				.query({
+					query: GET_TODOS,
+				})
+				.then((data) => {
+					console.log(data.data.todo_list);
+					this.todos = data.data.todo_list;
+				});
 		},
 	};
 </script>
