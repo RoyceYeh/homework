@@ -146,6 +146,18 @@
 			}
 		}
 	`;
+
+	const SUBSCRIPTION_TODO = gql`
+		subscription MySubscription {
+			todo_list {
+				id
+				task
+				created_at
+				updated_at
+			}
+		}
+	`;
+
 	export default {
 		name: "TodoList",
 		// props: {
@@ -292,6 +304,25 @@
 					});
 
 					this.todos = data.data.todo_list;
+
+					this.$apollo
+						.subscribe({
+							query: SUBSCRIPTION_TODO,
+						})
+						.subscribe({
+							next(data) {
+								if (data.data.todos.length) {
+									// check if the received todo is already present
+									if (data.data.todos[0].id !== this.todos[0].id) {
+										this.newTodosCount =
+											this.newTodosCount + data.data.todos.length;
+									}
+								}
+							},
+							error(err) {
+								console.error("err", err);
+							},
+						});
 				});
 		},
 	};
